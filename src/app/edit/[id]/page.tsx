@@ -46,11 +46,10 @@ export default function EditListing({ params }: { params: { id: string } }) {
     
             return {
                 ...prevData,
-                [name]: value as string, // Ensure value is treated as string
+                [name]: value as string,
             };
         });
     };
-    
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,8 +67,7 @@ export default function EditListing({ params }: { params: { id: string } }) {
     return (
         <div style={{
             minHeight: '100vh',
-            background: 'url("https://source.unsplash.com/1600x900/?abstract") no-repeat center center fixed',
-            backgroundSize: 'cover',
+            background: 'linear-gradient(135deg, #ff5f6d, #ffc371)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -80,115 +78,128 @@ export default function EditListing({ params }: { params: { id: string } }) {
                 maxWidth: '600px',
                 width: '100%',
                 background: '#fff',
-                padding: '20px',
-                borderRadius: '8px',
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+                padding: '30px',
+                borderRadius: '10px',
+                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15)',
                 color: '#333',
-                textAlign: 'center'
+                textAlign: 'center',
+                border: '2px solid #ff5f6d'
             }}>
-                <h1>Edit Listing</h1>
-                {success && <p style={{ color: "green" }}>{success}</p>}
-                {error && <p style={{ color: "red" }}>{error}</p>}
+                <h1 style={{
+                    fontSize: '32px',
+                    fontWeight: 'bold',
+                    color: '#333',
+                    marginBottom: '20px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '2px'
+                }}>Edit Listing</h1>
+                {success && <p style={{ color: "green", fontWeight: 'bold' }}>{success}</p>}
+                {error && <p style={{ color: "red", fontWeight: 'bold' }}>{error}</p>}
                 {formData ? (
                     <form onSubmit={handleSubmit}>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', display: 'block', marginBottom: '8px' }}>
                                 Title:
-                                <input
-                                    type="text"
-                                    name="title"
-                                    value={formData.title}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Enter listing title"
-                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                                />
                             </label>
+                            <input
+                                type="text"
+                                name="title"
+                                value={formData.title}
+                                onChange={handleChange}
+                                required
+                                placeholder="Enter listing title"
+                                style={{ width: '100%', padding: '12px', borderRadius: '5px', border: '2px solid #ccc', fontSize: '16px' }}
+                            />
                         </div>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', display: 'block', marginBottom: '8px' }}>
                                 Description:
-                                <textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Enter listing description"
-                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc', minHeight: '100px' }}
-                                />
                             </label>
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                required
+                                placeholder="Enter listing description"
+                                style={{ width: '100%', padding: '12px', borderRadius: '5px', border: '2px solid #ccc', fontSize: '16px', minHeight: '120px' }}
+                            />
                         </div>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', display: 'block', marginBottom: '8px' }}>
                                 Image URL:
-                                <input
-                                    type="text"
-                                    name="imageUrl"
-                                    value={formData.imageUrl}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Enter image URL"
-                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                                />
                             </label>
+                            <input
+                                type="text"
+                                name="imageUrl"
+                                value={formData.imageUrl}
+                                onChange={handleChange}
+                                required
+                                placeholder="Enter image URL"
+                                style={{ width: '100%', padding: '12px', borderRadius: '5px', border: '2px solid #ccc', fontSize: '16px' }}
+                            />
                         </div>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', display: 'block', marginBottom: '8px' }}>
                                 Price:
-                                <input
-                                    type="number"
-                                    name="price"
-                                    value={formData.price}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Enter listing price"
-                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                                />
                             </label>
+                            <input
+                                type="number"
+                                name="price"
+                                value={formData.price}
+                                onChange={handleChange}
+                                required
+                                placeholder="Enter listing price"
+                                style={{ width: '100%', padding: '12px', borderRadius: '5px', border: '2px solid #ccc', fontSize: '16px' }}
+                            />
                         </div>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', display: 'block', marginBottom: '8px' }}>
                                 Location:
-                                <input
-                                    type="text"
-                                    name="location"
-                                    value={formData.location}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Enter location"
-                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                                />
                             </label>
+                            <input
+                                type="text"
+                                name="location"
+                                value={formData.location}
+                                onChange={handleChange}
+                                required
+                                placeholder="Enter location"
+                                style={{ width: '100%', padding: '12px', borderRadius: '5px', border: '2px solid #ccc', fontSize: '16px' }}
+                            />
                         </div>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', display: 'block', marginBottom: '8px' }}>
                                 Country:
-                                <input
-                                    type="text"
-                                    name="country"
-                                    value={formData.country}
-                                    onChange={handleChange}
-                                    required
-                                    placeholder="Enter country"
-                                    style={{ width: '100%', padding: '10px', borderRadius: '4px', border: '1px solid #ccc' }}
-                                />
                             </label>
+                            <input
+                                type="text"
+                                name="country"
+                                value={formData.country}
+                                onChange={handleChange}
+                                required
+                                placeholder="Enter country"
+                                style={{ width: '100%', padding: '12px', borderRadius: '5px', border: '2px solid #ccc', fontSize: '16px' }}
+                            />
                         </div>
                         <button type="submit" style={{
-                            padding: '10px 20px',
-                            fontSize: '16px',
+                            padding: '12px 24px',
+                            fontSize: '18px',
+                            fontWeight: 'bold',
                             color: '#fff',
-                            backgroundColor: '#28a745',
+                            backgroundColor: '#ff5f6d',
                             border: 'none',
-                            borderRadius: '4px',
+                            borderRadius: '5px',
                             cursor: 'pointer',
-                            transition: 'background-color 0.3s ease'
-                        }}>
+                            transition: 'background-color 0.3s ease, transform 0.3s ease',
+                            width: '100%',
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#e0555b')}
+                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#ff5f6d')}
+                        >
                             Update Listing
                         </button>
                     </form>
                 ) : (
-                    <p style={{ color: '#fff' }}>Loading...</p>
+                    <p style={{ color: '#333', fontSize: '18px' }}>Loading...</p>
                 )}
             </div>
         </div>

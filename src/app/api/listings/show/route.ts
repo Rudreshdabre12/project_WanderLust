@@ -17,7 +17,7 @@ export async function POST(request : NextRequest){
          populate: { path: 'author' }  // Populate the author of each review
      })
       //   console.log(mylisting.reviews.populate('reviews'))
-        console.log(mylisting);
+        //console.log(mylisting);
         
        const response=NextResponse.json(mylisting);
        

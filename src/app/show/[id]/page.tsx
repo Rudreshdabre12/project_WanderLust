@@ -231,58 +231,108 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                             </button>
                         </div>
 
-                        {listing.reviews && listing.reviews.length > 0 && (
-                            <div style={{ 
-                                marginTop: '40px', 
-                                width: '100%' 
-                            }}>
-                                <h3 style={{
-                                    fontSize: '24px',
-                                    fontWeight: 'bold',
-                                    color: '#1f1c2c',
-                                    marginBottom: '20px'
-                                }}>
-                                    Reviews:
-                                </h3>
-                                <div style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '15px'
-                                }}>
-                                    {listing.reviews.map((review: any, index: number) => (
-                                        <div key={index} style={{
-                                            background: '#f1f1f1',
-                                            padding: '15px',
-                                            borderRadius: '8px',
-                                            boxShadow: '0 5px 10px rgba(0, 0, 0, 0.1)',
-                                        }}>
-                                            <p style={{
-                                                fontSize: '16px',
-                                                fontWeight:'bold',
-                                                color: '#333',
-                                                marginBottom: '10px'
-                                            }}>
-                                                comment:{review.comment}
-                                            </p>
-                                            <p style={{
-                                                fontSize: '16px',
-                                                fontWeight: 'bold',
-                                                color: '#333'
-                                            }}>
-                                                Rating: {review.rating}
-                                            </p>
-                                            <p style={{
-                                                fontSize: '16px',
-                                                fontWeight: 'bold',
-                                                color: '#333'
-                                            }}>
-                                                Author: {review.author.username}
-                                            </p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        <div style={{
+    marginTop: '40px',
+    width: '100%',
+    padding: '0 20px',
+    boxSizing: 'border-box'
+}}>
+    <h3 style={{
+        fontSize: '30px',
+        fontWeight: 'bold',
+        color: '#1f1c2c',
+        marginBottom: '30px',
+        textAlign: 'center',
+        textTransform: 'uppercase',
+        letterSpacing: '1.5px'
+    }}>
+        Reviews
+    </h3>
+    <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px'
+    }}>
+        {listing.reviews.map((review: any, index: number) => (
+            <div key={index} style={{
+                background: '#ffffff',
+                padding: '20px',
+                borderRadius: '8px',
+                boxShadow: '0 4px 10px rgba(0, 0, 0, 0.1)',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                border: '1px solid #ddd',
+                position: 'relative'
+            }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    marginBottom: '10px'
+                }}>
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRAd5avdba8EiOZH8lmV3XshrXx7dKRZvhx-A&s" alt="Avatar" style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '50%',
+                        marginRight: '10px'
+                    }} />
+                    <span style={{
+                        fontSize: '16px',
+                        fontWeight: 'bold',
+                        color: '#1f1c2c'
+                    }}>
+                        {review.author.username}
+                    </span>
+                </div>
+                <div style={{
+                    position: 'absolute',
+                    top: '15px',
+                    right: '15px',
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#3498db',
+                    backgroundColor: '#eaf3ff',
+                    borderRadius: '4px',
+                    padding: '5px 10px',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    textAlign: 'center'
+                }}>
+                    {review.rating} ★
+                </div>
+                <div style={{
+                    marginTop: '20px',
+                    marginBottom: '10px',
+                    fontSize: '18px',
+                    fontWeight: 'bold',
+                    color: '#333'
+                }}>
+                    {review.comment}
+                </div>
+                <div style={{
+                    marginTop: '10px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    fontSize: '14px',
+                    color: '#999'
+                }}>
+                    <div>
+                        <span style={{ marginRight: '10px' }}>👍 {review.likes}</span>
+                        <span>💬 {review.comments}</span>
+                    </div>
+                    <div>
+                        {review.timestamp}
+                    </div>
+                </div>
+                <style jsx>{`
+                    div:hover {
+                        transform: scale(1.02);
+                        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+                    }
+                `}</style>
+            </div>
+        ))}
+    </div>
+</div>
+
                     </>
                 ) : (
                     <div style={{ color: '#fff', fontSize: '18px' }}>Listing not found</div>
