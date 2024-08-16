@@ -40,11 +40,17 @@ export default function EditListing({ params }: { params: { id: string } }) {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
-        setFormData((prevData) => ({
-            ...prevData,
-            [name]: value
-        }));
+    
+        setFormData((prevData) => {
+            if (!prevData) return null;
+    
+            return {
+                ...prevData,
+                [name]: value as string, // Ensure value is treated as string
+            };
+        });
     };
+    
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
