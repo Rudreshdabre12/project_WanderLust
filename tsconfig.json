@@ -21,6 +21,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/app/home/page.tsx", "src/app/api/users/getTokenData/route.js", "src/app/api/cloudinary/upload/route.js"],
   "exclude": ["node_modules"]
 }
