@@ -25,7 +25,7 @@ export default function AddReview({ params }: { params: { id: string } }) {
         setError(null);
         try {
             const response=await axios.post("/api/users/getTokenData");
-             const userId=response.data.id;
+             const userId=response.data.data.id;
             const createdReview = {
                 ...formData,
                 author: userId,

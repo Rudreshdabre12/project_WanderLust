@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import listings from "@/models/listings";
+import Listing from "@/models/listings";
 import { NextRequest, NextResponse } from "next/server";
 import { connect } from "@/dbConfig/dbConfig";
 import Joi from "joi";
@@ -13,18 +13,25 @@ const listingSchema = Joi.object({
     description: Joi.string().required(),
     image: Joi.object({
         url: Joi.string().required(),
-        filename: Joi.string().required(), // Added filename validation
+        filename: Joi.string().required(),
     }).required(),
     price: Joi.number().required().min(0),
     location: Joi.string().required(),
     country: Joi.string().required(),
+    user: Joi.object({
+        data: Joi.object({
+            data: Joi.object({
+                id: Joi.string().required()
+            }).required()
+        }).required()
+    }).required()
 });
 
 export async function POST(request: NextRequest) {
     try {
         const reqBody = await request.json();
 
-        // Validate the request body using Joi
+        // Validate request body using Joi
         const { error } = listingSchema.validate(reqBody);
         if (error) {
             return NextResponse.json({
@@ -34,22 +41,22 @@ export async function POST(request: NextRequest) {
             }, { status: 400 });
         }
 
-        const { title, description, image, price, location, country } = reqBody;
+        const { title, description, image, price, location, country, user } = reqBody;
 
-        const newListing = new listings({
-            title: title,
-            description: description,
-            image: {
-                url: image.url,
-                filename: image.filename // Ensure to include filename if needed
-            },
-            price: price,
-            location: location,
-            country: country
-        });
-
+const newListing = new Listing({
+    title,
+    description,
+    image: {
+        url: image.url,
+        filename: image.filename,
+    },
+    price,
+    location,
+    country,
+    owner: user.data.data.id // <-- correct extraction
+});
         const savedListing = await newListing.save();
-
+        console.log(savedListing);
         return NextResponse.json({
             message: "Listing created successfully",
             success: true,
