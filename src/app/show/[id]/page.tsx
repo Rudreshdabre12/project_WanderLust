@@ -2,6 +2,8 @@
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from 'next/image';
+
 export default function ShowListing({ params }: { params: { id: string } }) {
     const id = params.id;
     const [listing, setListing] = useState<any>(null);
@@ -181,10 +183,12 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                 <>
                     {/* Hero Image Section */}
                     <div className="hero-section">
-                        <div className="hero-image-container">
-                            <img 
+                        <div className="hero-image-container" style={{ position: 'relative', height: '500px' }}>
+                            <Image 
                                 src={listing.image.url} 
                                 alt={listing.title} 
+                                fill
+                                style={{ objectFit: 'cover' }}
                                 className="hero-image"
                             />
                             <div className="hero-overlay"></div>
@@ -210,11 +214,15 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                                 {/* Owner Info */}
                                 <div className="owner-section">
                                     <div className="owner-info">
-                                        <img 
-                                            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" 
-                                            alt="Owner" 
-                                            className="owner-avatar"
-                                        />
+                                        <div style={{ position: 'relative', width: '100px', height: '100px' }}>
+                                            <Image 
+                                                src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" 
+                                                alt="Owner" 
+                                                fill
+                                                style={{ objectFit: 'cover' }}
+                                                className="owner-avatar"
+                                            />
+                                        </div>
                                         <div className="owner-details">
                                             <h3>Hosted by {listing.owner?.username || 'Host'}</h3>
                                             <p>Superhost · 2 years hosting</p>
@@ -254,10 +262,12 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                                                     <div className="review-card-inner">
                                                         <div className="review-header">
                                                             <div className="reviewer-main">
-                                                                <div className="reviewer-avatar-container">
-                                                                    <img 
+                                                                <div className="reviewer-avatar-container" style={{ position: 'relative', width: '50px', height: '50px' }}>
+                                                                    <Image 
                                                                         src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" 
                                                                         alt="Reviewer" 
+                                                                        fill
+                                                                        style={{ objectFit: 'cover' }}
                                                                         className="reviewer-avatar"
                                                                     />
                                                                     <div className="online-indicator"></div>
@@ -295,7 +305,7 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                                                         
                                                         <div className="review-content">
                                                             <p className="review-comment">
-                                                                "{review.comment || 'Amazing experience! Highly recommended.'}"
+                                                                &quot;{review.comment || 'Amazing experience! Highly recommended.'}&quot;
                                                             </p>
                                                         </div>
                                                         

@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import React, { useEffect, useState, useMemo } from "react";
 import { ClipLoader } from "react-spinners"; 
+import Image from 'next/image';
 
 // Constants for available cities and countries
 const AVAILABLE_CITIES = [
@@ -623,18 +624,17 @@ export default function HomePage() {
                                 }}
                                 onClick={() => handleClick(listing._id)}
                             >
-                                <div style={{ position: 'relative', overflow: 'hidden' }}>
-                                    <img
+                                <div style={{ position: 'relative', overflow: 'hidden', height: '220px' }}>
+                                    <Image
                                         src={listing.image.url}
                                         alt={listing.title}
+                                        fill
                                         style={{
-                                            width: '100%',
-                                            height: '220px',
                                             objectFit: 'cover',
                                             transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
                                         }}
-                                        onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                                        onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                                        onMouseOver={(e: any) => e.target.style.transform = 'scale(1.1)'}
+                                        onMouseOut={(e: any) => e.target.style.transform = 'scale(1)'}
                                     />
                                     <div style={{
                                         position: 'absolute',
@@ -741,7 +741,7 @@ export default function HomePage() {
                             Ask AI Assistant
                         </h3>
                         <p style={{ margin: '0 0 20px 0', color: '#6b7280', fontSize: '14px' }}>
-                            Tell me your travel preferences (e.g., "I want to go to India with budget 6000")
+                            Tell me your travel preferences (e.g., &quot;I want to go to India with budget 6000&quot;)
                         </p>
                         <div style={{ position: 'relative' }}>
                             <input
