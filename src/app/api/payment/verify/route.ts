@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from 'crypto';
 import { connect } from "@/dbConfig/dbConfig";
 import Booking from "@/models/bookings";
+import { headers } from 'next/headers';
 
 connect();
+
+export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
     try {
@@ -21,13 +24,22 @@ export async function POST(request: NextRequest) {
         console.log('Verifying payment:', { paymentId, orderId, listingId, amount });
 
         // Get user data from the token API
-        const tokenResponse = await fetch('http://localhost:3000/api/users/getTokenData', {
+        const headersList = headers();
+        const cookie = headersList.get('cookie');
+
+        const tokenResponse = await fetch(`${request.nextUrl.origin}/api/users/getTokenData`, {
             method: 'POST',
             headers: {
-                'Cookie': request.headers.get('cookie') || ''
-            }
+                'Cookie': cookie || '',
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
         });
         
+        if (!tokenResponse.ok) {
+            throw new Error('Authentication failed');
+        }
+
         const tokenData = await tokenResponse.json();
         
         if (!tokenData.data?.id) {
@@ -69,16 +81,25 @@ export async function POST(request: NextRequest) {
                     paymentId,
                     orderId,
                     amount: amount / 100, // Convert from paise to rupees
-                    status: 'confirmed'
+                    status: 'confirmed',
+                    bookingDate: new Date()
                 });
 
                 console.log('Booking created:', booking);
 
-                return NextResponse.json({
+                const response = NextResponse.json({
                     success: true,
                     message: "Payment verified and booking confirmed",
                     booking
                 });
+
+                // Add CORS headers
+                response.headers.set('Access-Control-Allow-Credentials', 'true');
+                response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
+                response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+                response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+                return response;
             } catch (dbError: any) {
                 console.error('Database error while creating booking:', dbError);
                 return NextResponse.json({
@@ -101,4 +122,17 @@ export async function POST(request: NextRequest) {
             error: error.message || "Error verifying payment"
         }, { status: 500 });
     }
+}
+
+// Handle OPTIONS request for CORS
+export async function OPTIONS(request: NextRequest) {
+    const response = NextResponse.json({}, { status: 200 });
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    
+    return response;
 } 

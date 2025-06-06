@@ -318,6 +318,8 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                 height: 24px !important;
                 min-width: 24px !important;
                 min-height: 24px !important;
+                max-width: 24px !important;
+                max-height: 24px !important;
             }
         `;
         document.head.appendChild(style);
