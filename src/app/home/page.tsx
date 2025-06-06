@@ -10,7 +10,7 @@ const AVAILABLE_CITIES = [
     "Mumbai", "Delhi", "Bangkok", "Tokyo", "Paris", 
     "London", "New York", "Dubai", "Singapore", "Sydney",
     "Rome", "Barcelona", "Amsterdam", "Berlin", "Venice",
-    "Cairo", "Istanbul", "Moscow", "Seoul", "Toronto"
+    "Cairo", "Istanbul", "Moscow", "Seoul", "Toronto","Allahabad"
 ];
 
 const AVAILABLE_COUNTRIES = [
@@ -629,6 +629,8 @@ export default function HomePage() {
                                         src={listing.image.url}
                                         alt={listing.title}
                                         fill
+                                        priority={index < 6}
+                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                         style={{
                                             objectFit: 'cover',
                                             transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',

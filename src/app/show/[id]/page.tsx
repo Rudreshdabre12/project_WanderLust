@@ -188,6 +188,8 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                                 src={listing.image.url} 
                                 alt={listing.title} 
                                 fill
+                                priority
+                                sizes="100vw"
                                 style={{ objectFit: 'cover' }}
                                 className="hero-image"
                             />
@@ -219,6 +221,7 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                                                 src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" 
                                                 alt="Owner" 
                                                 fill
+                                                sizes="100px"
                                                 style={{ objectFit: 'cover' }}
                                                 className="owner-avatar"
                                             />
