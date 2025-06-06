@@ -3,6 +3,7 @@ import { connect } from "@/dbConfig/dbConfig";
 import Booking from "@/models/bookings";
 import Listing from "@/models/listings";
 import User from "@/models/user";
+import { headers } from 'next/headers';
 
 connect();
 
@@ -41,14 +42,22 @@ export async function GET(request: NextRequest) {
         // Verify user authentication for user-specific queries
         if (userId) {
             try {
-                // Use relative URL and handle both development and production environments
-                const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-                const tokenResponse = await fetch(`${baseUrl}/api/users/getTokenData`, {
+                const headersList = headers();
+                const cookie = headersList.get('cookie');
+                
+                const tokenResponse = await fetch(`${request.nextUrl.origin}/api/users/getTokenData`, {
                     method: 'POST',
                     headers: {
-                        'Cookie': request.headers.get('cookie') || ''
-                    }
+                        'Cookie': cookie || '',
+                        'Content-Type': 'application/json',
+                    },
+                    credentials: 'include',
                 });
+
+                if (!tokenResponse.ok) {
+                    throw new Error('Authentication failed');
+                }
+
                 const tokenData = await tokenResponse.json();
                 
                 // Only allow users to see their own bookings
@@ -111,7 +120,16 @@ export async function GET(request: NextRequest) {
             };
         });
 
-        return NextResponse.json(transformedBookings);
+        // Create the response with proper headers
+        const response = NextResponse.json(transformedBookings);
+        
+        // Add CORS headers
+        response.headers.set('Access-Control-Allow-Credentials', 'true');
+        response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
+        response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+
+        return response;
     } catch (error: any) {
         console.error("Error fetching bookings:", error);
         return NextResponse.json(
@@ -119,4 +137,17 @@ export async function GET(request: NextRequest) {
             { status: 500 }
         );
     }
+}
+
+// Handle OPTIONS request for CORS
+export async function OPTIONS(request: NextRequest) {
+    const response = NextResponse.json({}, { status: 200 });
+    
+    // Add CORS headers
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    
+    return response;
 } 

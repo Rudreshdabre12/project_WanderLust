@@ -35,7 +35,12 @@ export default function ShowListing({ params }: { params: { id: string } }) {
             try {
                 const [listingResponse, userResponse] = await Promise.all([
                     axios.post("/api/listings/show", { id }),
-                    axios.post("/api/users/getTokenData")
+                    axios.post("/api/users/getTokenData", {}, {
+                        withCredentials: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
                 ]);
 
                 setListing(listingResponse.data);
@@ -44,10 +49,20 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                 // Only fetch bookings if user is logged in
                 if (userResponse.data.data?.id) {
                     // Fetch only the current user's bookings for this listing
-                    const bookingsResponse = await axios.get(`/api/bookings?listingId=${id}&userId=${userResponse.data.data.id}`);
+                    const bookingsResponse = await axios.get(`/api/bookings`, {
+                        params: {
+                            listingId: id,
+                            userId: userResponse.data.data.id
+                        },
+                        withCredentials: true,
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
                     setBookings(bookingsResponse.data);
                 }
             } catch (err: any) {
+                console.error("Error fetching data:", err);
                 setError(err.message);
             } finally {
                 setLoading(false);
@@ -56,17 +71,22 @@ export default function ShowListing({ params }: { params: { id: string } }) {
         };
         fetchData();
 
-        // Fetch current user (you'll need to implement this)
+        // Fetch current user
         const fetchCurrentUser = async () => {
-             try {
-                 const response = await axios.post("/api/users/getTokenData");
-                 setUserid(response.data.data.id);
-                 setCurrentUser(response.data.data);
-             } catch (err) {
-                 console.log("Not authenticated");
-             }
-         };
-         fetchCurrentUser();
+            try {
+                const response = await axios.post("/api/users/getTokenData", {}, {
+                    withCredentials: true,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                setUserid(response.data.data.id);
+                setCurrentUser(response.data.data);
+            } catch (err) {
+                console.log("Not authenticated");
+            }
+        };
+        fetchCurrentUser();
     }, [id]);
 
     // Load Razorpay script
