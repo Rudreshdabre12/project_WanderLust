@@ -203,7 +203,11 @@ export default function AddListingForm() {
             setSelectedFile(null);
             setImagePreview("");
             
+            // Refresh home page data before navigation
+            await axios.get(`/api/listings/home?t=${Date.now()}`);
+            
             setTimeout(() => {
+                router.refresh(); // Refresh router cache
                 router.push("/home");
             }, 2000);
             

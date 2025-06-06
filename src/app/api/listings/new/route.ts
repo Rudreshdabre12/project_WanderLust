@@ -6,6 +6,10 @@ import Joi from "joi";
 
 // Connect to the database
 connect();
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -53,10 +57,14 @@ export async function POST(request: NextRequest) {
 
     const savedListing = await newListing.save();
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       listing: savedListing
     }, { status: 201 });
+
+    // Add cache control headers
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
 
   } catch (error) {
     console.error('Listing creation error:', error);

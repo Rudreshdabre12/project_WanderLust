@@ -42,7 +42,7 @@ export default function HomePage() {
     useEffect(() => {
         const fetchListings = async () => {
             try {
-                const response = await axios.get("/api/listings/home");
+                const response = await axios.get(`/api/listings/home?t=${Date.now()}`);
                 setListings(response.data);
             } catch (err: any) {
                 console.log("error in fetching listings", err.message);
@@ -55,8 +55,13 @@ export default function HomePage() {
 
     // Add a new effect to refresh data when coming from edit page
     useEffect(() => {
-        const refreshData = () => {
-            router.refresh();
+        const refreshData = async () => {
+            try {
+                const response = await axios.get(`/api/listings/home?t=${Date.now()}`);
+                setListings(response.data);
+            } catch (err: any) {
+                console.log("error in refreshing listings", err.message);
+            }
         };
         refreshData();
     }, [router]);

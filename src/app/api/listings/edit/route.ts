@@ -33,6 +33,9 @@ const listingUpdateSchema = Joi.object({
     imageFile: Joi.any(), // For handling file uploads
 });
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function PUT(request: NextRequest) {
     try {
         const formData = await request.formData();
@@ -140,11 +143,15 @@ export async function PUT(request: NextRequest) {
             }
         );
 
-        return NextResponse.json({
+        const response = NextResponse.json({
             message: "Listing updated successfully",
             success: true,
             listing: updatedListing
         }, { status: 200 });
+
+        // Add cache control headers
+        response.headers.set('Cache-Control', 'no-store');
+        return response;
 
     } catch (error) {
         const err = error as Error;
