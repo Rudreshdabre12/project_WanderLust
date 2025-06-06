@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from 'next/image';
 
 interface FormData {
     title: string;
@@ -533,16 +534,22 @@ export default function AddListingForm() {
                                     </div>
                                 ) : (
                                     <div style={{ position: 'relative' }}>
-                                        <img
-                                            src={imagePreview}
-                                            alt="Preview"
-                                            style={{
-                                                maxWidth: '100%',
-                                                maxHeight: '300px',
-                                                borderRadius: '12px',
-                                                boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)'
-                                            }}
-                                        />
+                                        <div style={{ position: 'relative', width: '100%', height: '300px' }}>
+                                            <Image
+                                                src={imagePreview}
+                                                alt="Preview"
+                                                fill
+                                                priority
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                                style={{
+                                                    maxWidth: '100%',
+                                                    maxHeight: '300px',
+                                                    borderRadius: '12px',
+                                                    boxShadow: '0 8px 16px rgba(0, 0, 0, 0.1)',
+                                                    objectFit: 'contain'
+                                                }}
+                                            />
+                                        </div>
                                         <motion.button
                                             whileHover={{ scale: 1.1 }}
                                             whileTap={{ scale: 0.9 }}
