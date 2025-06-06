@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import Review from "./reviews";
+
 const listingSchema = mongoose.Schema({
     title: String,
     description: String,
@@ -29,5 +31,5 @@ const listingSchema = mongoose.Schema({
       await Review.deleteMany({ _id: { $in: listing.reviews } });
     }
   });
-  const Listing=mongoose.models.Listing || mongoose.model('Listing',listingSchema);
+  const Listing = mongoose.models.Listing || mongoose.model('Listing', listingSchema);
   export default Listing;

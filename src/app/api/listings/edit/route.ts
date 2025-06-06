@@ -24,14 +24,13 @@ type CloudinaryResponse = {
 // Define the Joi schema for validation
 const listingUpdateSchema = Joi.object({
     id: Joi.string().required(),
-    title: Joi.string().required().min(3).max(100),
-    description: Joi.string().required().min(10),
+    title: Joi.string().required(),
+    description: Joi.string().required(),
     imageUrl: Joi.string().required(),
     price: Joi.number().required().min(0),
-    location: Joi.string().required().min(2),
-    country: Joi.string().required().min(2),
-    imageFile: Joi.any(), // For handling file uploads
-});
+    location: Joi.string().required(),
+    country: Joi.string().required()
+}).unknown(true); // Allow unknown keys for FormData
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -39,21 +38,23 @@ export const revalidate = 0;
 export async function PUT(request: NextRequest) {
     try {
         const formData = await request.formData();
-        const id = formData.get('id') as string;
-        const title = formData.get('title') as string;
-        const description = formData.get('description') as string;
-        const imageUrl = formData.get('imageUrl') as string;
-        const price = Number(formData.get('price'));
-        const location = formData.get('location') as string;
-        const country = formData.get('country') as string;
-        const imageFile = formData.get('imageFile') as File | null;
+        
+        // Convert FormData to object
+        const data = {
+            id: formData.get('id'),
+            title: formData.get('title'),
+            description: formData.get('description'),
+            imageUrl: formData.get('imageUrl'),
+            price: Number(formData.get('price')),
+            location: formData.get('location'),
+            country: formData.get('country')
+        };
 
         // Validate the input data
-        const { error } = listingUpdateSchema.validate({
-            id, title, description, imageUrl, price, location, country
-        });
+        const { error } = listingUpdateSchema.validate(data);
 
         if (error) {
+            console.error('Validation error:', error.details);
             return NextResponse.json({
                 message: "Validation error",
                 success: false,
@@ -62,7 +63,7 @@ export async function PUT(request: NextRequest) {
         }
 
         // Check if listing exists
-        const existingListing = await Listing.findById(id);
+        const existingListing = await Listing.findById(data.id);
         if (!existingListing) {
             return NextResponse.json({ 
                 message: "Listing not found",
@@ -70,11 +71,12 @@ export async function PUT(request: NextRequest) {
             }, { status: 404 });
         }
 
-        let finalImageUrl = imageUrl;
+        let finalImageUrl = data.imageUrl;
         let imageFilename = existingListing.image.filename;
 
         // Handle new image upload if provided
-        if (imageFile) {
+        const imageFile = formData.get('imageFile') as File | null;
+        if (imageFile && imageFile.size > 0) {
             try {
                 // Convert File to buffer for Cloudinary upload
                 const arrayBuffer = await imageFile.arrayBuffer();
@@ -85,7 +87,7 @@ export async function PUT(request: NextRequest) {
                     const uploadStream = cloudinary.uploader.upload_stream(
                         {
                             folder: 'listings',
-                            public_id: `listing_${id}_${Date.now()}`,
+                            public_id: `listing_${data.id}_${Date.now()}`,
                             resource_type: 'auto'
                         },
                         (error, result) => {
@@ -113,35 +115,41 @@ export async function PUT(request: NextRequest) {
                     }
                 }
             } catch (error) {
-                const uploadErr = error as Error;
-                console.error('Error uploading to Cloudinary:', uploadErr);
+                console.error('Error uploading to Cloudinary:', error);
                 return NextResponse.json({
                     message: "Error uploading image",
                     success: false,
-                    error: uploadErr.message
+                    error: error instanceof Error ? error.message : 'Unknown error'
                 }, { status: 500 });
             }
         }
 
         // Update the listing with new data
         const updatedListing = await Listing.findByIdAndUpdate(
-            id,
+            data.id,
             {
-                title,
-                description,
+                title: data.title,
+                description: data.description,
                 image: {
                     url: finalImageUrl,
                     filename: imageFilename
                 },
-                price,
-                location,
-                country
+                price: data.price,
+                location: data.location,
+                country: data.country
             },
             { 
                 new: true,
                 runValidators: true
             }
         );
+
+        if (!updatedListing) {
+            return NextResponse.json({
+                message: "Failed to update listing",
+                success: false
+            }, { status: 500 });
+        }
 
         const response = NextResponse.json({
             message: "Listing updated successfully",
@@ -154,12 +162,11 @@ export async function PUT(request: NextRequest) {
         return response;
 
     } catch (error) {
-        const err = error as Error;
-        console.error("Error updating listing:", err.message);
+        console.error("Error updating listing:", error);
         return NextResponse.json({
             message: "Error updating listing",
             success: false,
-            error: err.message
+            error: error instanceof Error ? error.message : 'Unknown error'
         }, { status: 500 });
     }
 }

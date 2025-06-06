@@ -134,6 +134,18 @@ export default function EditListing({ params }: { params: { id: string } }) {
         try {
             let updatedImageUrl = formData.imageUrl;
             
+            // If there's a selected file, upload it first
+            if (selectedFile) {
+                const cloudinaryUrl = await uploadToCloudinary();
+                if (cloudinaryUrl) {
+                    updatedImageUrl = cloudinaryUrl;
+                } else {
+                    // If upload failed, show error and return
+                    setError("Failed to upload image. Please try again.");
+                    return;
+                }
+            }
+            
             // Create FormData object
             const formDataToSend = new FormData();
             formDataToSend.append('id', id);
@@ -149,17 +161,22 @@ export default function EditListing({ params }: { params: { id: string } }) {
                 formDataToSend.append('imageFile', selectedFile);
             }
 
-            await axios.put("/api/listings/edit", formDataToSend, {
+            const response = await axios.put("/api/listings/edit", formDataToSend, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
-            
-            setSuccess("Listing updated successfully!");
-            router.refresh();
-            router.push('/home');
+
+            if (response.data.success) {
+                setSuccess("Listing updated successfully!");
+                router.refresh();
+                router.push('/home');
+            } else {
+                setError(response.data.message || "Failed to update listing");
+            }
         } catch (err: any) {
-            setError("Error updating listing: " + err.message);
+            console.error("Error updating listing:", err);
+            setError(err.response?.data?.error || err.message || "Error updating listing");
         }
     };
 

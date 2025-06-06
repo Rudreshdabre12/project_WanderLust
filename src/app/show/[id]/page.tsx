@@ -3,6 +3,14 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from 'next/image';
+import Script from 'next/script';
+
+// Add type definition for Razorpay at the top of the file
+declare global {
+    interface Window {
+        Razorpay: any;
+    }
+}
 
 export default function ShowListing({ params }: { params: { id: string } }) {
     const id = params.id;
@@ -14,21 +22,36 @@ export default function ShowListing({ params }: { params: { id: string } }) {
     const router = useRouter();
     const [userid, setUserid] = useState<any>(null);
     const [listingState, setListingState] = useState(listing);
+    const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false);
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+    const [bookings, setBookings] = useState<any[]>([]);
+    const [loadingBookings, setLoadingBookings] = useState(true);
     //const [listingid, setListingid] = useState<any>(null);
     useEffect(() => {
-        const fetchListing = async () => {
+        const fetchData = async () => {
             try {
-                const response = await axios.post("/api/listings/show", { id });
-                setListing(response.data);
-                //setListingid(response.data.id);
-                setLoading(false);
+                const [listingResponse, userResponse] = await Promise.all([
+                    axios.post("/api/listings/show", { id }),
+                    axios.post("/api/users/getTokenData")
+                ]);
+
+                setListing(listingResponse.data);
+                setCurrentUser(userResponse.data.data);
+
+                // Only fetch bookings if user is logged in
+                if (userResponse.data.data?.id) {
+                    // Fetch only the current user's bookings for this listing
+                    const bookingsResponse = await axios.get(`/api/bookings?listingId=${id}&userId=${userResponse.data.data.id}`);
+                    setBookings(bookingsResponse.data);
+                }
             } catch (err: any) {
-                console.log(err.message);
-                setError("Error fetching listing");
+                setError(err.message);
+            } finally {
                 setLoading(false);
+                setLoadingBookings(false);
             }
         };
-        fetchListing();
+        fetchData();
 
         // Fetch current user (you'll need to implement this)
         const fetchCurrentUser = async () => {
@@ -42,6 +65,37 @@ export default function ShowListing({ params }: { params: { id: string } }) {
          };
          fetchCurrentUser();
     }, [id]);
+
+    // Load Razorpay script
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const loadRazorpay = () => {
+            if (window.Razorpay) {
+                console.log('Razorpay already loaded');
+                setIsRazorpayLoaded(true);
+                return;
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.async = true;
+            script.onload = () => {
+                console.log('Razorpay script loaded successfully');
+                if (window.Razorpay) {
+                    console.log('Razorpay object is available');
+                    setIsRazorpayLoaded(true);
+                }
+            };
+            script.onerror = (e) => {
+                console.error('Error loading Razorpay script:', e);
+                alert('Payment system failed to load. Please refresh the page.');
+            };
+            document.body.appendChild(script);
+        };
+
+        loadRazorpay();
+    }, []);
 
     const handleEdit = () => {
         router.push(`/edit/${id}`);
@@ -76,10 +130,178 @@ export default function ShowListing({ params }: { params: { id: string } }) {
         router.push(`/review/add/${id}`);
     };
 
-    const handleBook = () => {
-        // Implement booking logic
-        alert("Booking functionality to be implemented");
+    const verifyPayment = async (paymentId: string, orderId: string, signature: string, amount: number) => {
+        try {
+            const response = await axios.post('/api/payment/verify', {
+                paymentId,
+                orderId,
+                signature,
+                listingId: id,
+                amount
+            });
+            return response.data.success;
+        } catch (error) {
+            console.error('Payment verification failed:', error);
+            return false;
+        }
     };
+
+    const handleBook = async () => {
+        if (!isRazorpayLoaded) {
+            console.log('Waiting for Razorpay to load...');
+            // Try to load Razorpay again
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.async = true;
+            script.onload = () => {
+                console.log('Razorpay loaded on demand');
+                if (window.Razorpay) {
+                    setIsRazorpayLoaded(true);
+                    // Retry the booking process
+                    handleBook();
+                }
+            };
+            document.body.appendChild(script);
+            return;
+        }
+
+        if (isProcessingPayment) {
+            alert('Payment is already in progress. Please wait...');
+            return;
+        }
+
+        if (!currentUser) {
+            alert('Please login to make a booking');
+            router.push('/login');
+            return;
+        }
+
+        try {
+            setIsProcessingPayment(true);
+            console.log('Creating payment order...');
+
+            // Create order on the server
+            const response = await axios.post('/api/payment', {
+                amount: listing.price,
+                currency: 'INR'
+            });
+
+            console.log('Payment order response:', response.data);
+
+            if (!response.data.success) {
+                throw new Error('Failed to create order');
+            }
+
+            const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
+            if (!razorpayKeyId) {
+                throw new Error('Razorpay key not configured');
+            }
+
+            console.log('Initializing payment with key:', razorpayKeyId);
+
+            const options = {
+                key: razorpayKeyId,
+                amount: response.data.order.amount,
+                currency: response.data.order.currency,
+                name: "WanderLust",
+                description: `Booking for ${listing.title}`,
+                order_id: response.data.order.id,
+                prefill: {
+                    name: currentUser?.username || '',
+                    email: currentUser?.email || '',
+                },
+                handler: function (response: any) {
+                    console.log('Payment successful, verifying...', response);
+                    handlePaymentVerification(response);
+                },
+                modal: {
+                    ondismiss: function() {
+                        console.log('Payment modal dismissed');
+                        setIsProcessingPayment(false);
+                    },
+                    confirm_close: true,
+                    escape: true,
+                    animation: true // Enable animation
+                },
+                theme: {
+                    color: "#667eea"
+                }
+            };
+
+            console.log('Creating Razorpay instance...');
+            const paymentObject = new window.Razorpay(options);
+            console.log('Opening payment modal...');
+            paymentObject.open();
+
+            // Add event listeners for better error handling
+            paymentObject.on('payment.failed', function (response: any) {
+                console.error('Payment failed:', response.error);
+                alert(`Payment failed: ${response.error.description}`);
+                setIsProcessingPayment(false);
+            });
+
+        } catch (err: any) {
+            console.error('Payment error:', err);
+            alert(`Failed to initiate payment: ${err.message}`);
+            setIsProcessingPayment(false);
+        }
+    };
+
+    const handlePaymentVerification = async (paymentResponse: any) => {
+        try {
+            console.log('Verifying payment...', {
+                paymentId: paymentResponse.razorpay_payment_id,
+                orderId: paymentResponse.razorpay_order_id,
+                listingId: id,
+            });
+
+            const verificationResponse = await axios.post('/api/payment/verify', {
+                paymentId: paymentResponse.razorpay_payment_id,
+                orderId: paymentResponse.razorpay_order_id,
+                signature: paymentResponse.razorpay_signature,
+                listingId: id,
+                amount: listing.price * 100 // Convert to paise
+            });
+
+            console.log('Verification response:', verificationResponse.data);
+
+            if (verificationResponse.data.success) {
+                alert('Payment Successful! Booking confirmed.');
+                router.refresh();
+                router.push('/bookings');
+            } else {
+                throw new Error(verificationResponse.data.message || 'Payment verification failed');
+            }
+        } catch (err: any) {
+            console.error('Payment verification failed:', err);
+            alert(`Payment verification failed: ${err.message}`);
+        } finally {
+            setIsProcessingPayment(false);
+        }
+    };
+
+    // Add custom styles for Razorpay modal
+    useEffect(() => {
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .razorpay-checkout-frame {
+                max-width: 100% !important;
+            }
+            .razorpay-payment-button {
+                display: none !important;
+            }
+            .razorpay-container svg {
+                width: 24px !important;
+                height: 24px !important;
+                min-width: 24px !important;
+                min-height: 24px !important;
+            }
+        `;
+        document.head.appendChild(style);
+        return () => {
+            document.head.removeChild(style);
+        };
+    }, []);
 
     const handleWishlist = () => {
         setIsWishlisted(!isWishlisted);
@@ -210,6 +432,198 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                                     <p className="description-text">{listing.description}</p>
                                 </div>
 
+                                {/* Bookings Section - Only show if user is logged in */}
+                                {currentUser && (
+                                    <div style={{
+                                        background: 'linear-gradient(to right bottom, #ffffff, #f8f9ff)',
+                                        borderRadius: '24px',
+                                        padding: '32px',
+                                        marginBottom: '32px',
+                                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+                                        border: '1px solid rgba(102, 126, 234, 0.1)',
+                                        position: 'relative',
+                                        overflow: 'hidden'
+                                    }}>
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: 0,
+                                            left: 0,
+                                            right: 0,
+                                            height: '4px',
+                                            background: 'linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c)',
+                                            backgroundSize: '400% 400%'
+                                        }}></div>
+                                        
+                                        <h2 style={{
+                                            fontSize: '28px',
+                                            fontWeight: 800,
+                                            marginBottom: '24px',
+                                            color: '#2d3748',
+                                            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                            WebkitBackgroundClip: 'text',
+                                            WebkitTextFillColor: 'transparent'
+                                        }}>Your Bookings for this Listing</h2>
+                                        
+                                        {loadingBookings ? (
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'center',
+                                                alignItems: 'center',
+                                                padding: '32px'
+                                            }}>
+                                                <div style={{
+                                                    width: '40px',
+                                                    height: '40px',
+                                                    border: '4px solid #f3f3f3',
+                                                    borderTop: '4px solid #667eea',
+                                                    borderRadius: '50%',
+                                                    animation: 'spin 1s linear infinite'
+                                                }}></div>
+                                            </div>
+                                        ) : bookings.length === 0 ? (
+                                            <div style={{
+                                                textAlign: 'center',
+                                                padding: '48px 20px',
+                                                background: 'rgba(255, 255, 255, 0.8)',
+                                                borderRadius: '16px',
+                                                backdropFilter: 'blur(10px)'
+                                            }}>
+                                                <div style={{
+                                                    fontSize: '48px',
+                                                    marginBottom: '16px'
+                                                }}>📅</div>
+                                                <p style={{
+                                                    color: '#4a5568',
+                                                    fontSize: '18px',
+                                                    marginBottom: '24px'
+                                                }}>You haven't booked this place yet</p>
+                                                {!isOwner && (
+                                                    <button
+                                                        onClick={handleBook}
+                                                        style={{
+                                                            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                                            color: 'white',
+                                                            padding: '14px 32px',
+                                                            borderRadius: '50px',
+                                                            border: 'none',
+                                                            fontSize: '16px',
+                                                            fontWeight: 600,
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.3s ease',
+                                                            boxShadow: '0 10px 20px rgba(102, 126, 234, 0.2)',
+                                                            transform: 'translateY(0)'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(-3px)';
+                                                            e.currentTarget.style.boxShadow = '0 15px 30px rgba(102, 126, 234, 0.3)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = '0 10px 20px rgba(102, 126, 234, 0.2)';
+                                                        }}
+                                                    >
+                                                        Book Now
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div style={{
+                                                display: 'grid',
+                                                gap: '20px'
+                                            }}>
+                                                {bookings.map((booking) => (
+                                                    <div 
+                                                        key={booking._id}
+                                                        style={{
+                                                            background: 'white',
+                                                            borderRadius: '16px',
+                                                            padding: '24px',
+                                                            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.05)',
+                                                            border: '1px solid rgba(102, 126, 234, 0.1)',
+                                                            transition: 'all 0.3s ease',
+                                                            cursor: 'pointer',
+                                                            position: 'relative',
+                                                            overflow: 'hidden'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(-5px)';
+                                                            e.currentTarget.style.boxShadow = '0 15px 40px rgba(0, 0, 0, 0.1)';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.transform = 'translateY(0)';
+                                                            e.currentTarget.style.boxShadow = '0 8px 30px rgba(0, 0, 0, 0.05)';
+                                                        }}
+                                                    >
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            justifyContent: 'space-between',
+                                                            alignItems: 'flex-start',
+                                                            marginBottom: '16px'
+                                                        }}>
+                                                            <div>
+                                                                <div style={{
+                                                                    fontSize: '18px',
+                                                                    fontWeight: 700,
+                                                                    color: '#2d3748',
+                                                                    marginBottom: '8px'
+                                                                }}>
+                                                                    Booking Reference: #{booking.orderId.slice(-6)}
+                                                                </div>
+                                                                <div style={{
+                                                                    color: '#718096',
+                                                                    fontSize: '14px',
+                                                                    marginBottom: '8px'
+                                                                }}>
+                                                                    {new Date(booking.bookingDate).toLocaleDateString('en-US', {
+                                                                        year: 'numeric',
+                                                                        month: 'long',
+                                                                        day: 'numeric'
+                                                                    })}
+                                                                </div>
+                                                                <div style={{
+                                                                    color: '#667eea',
+                                                                    fontWeight: 600,
+                                                                    fontSize: '16px'
+                                                                }}>
+                                                                    Amount: ₹{booking.amount}
+                                                                </div>
+                                                            </div>
+                                                            <div style={{
+                                                                padding: '8px 16px',
+                                                                borderRadius: '50px',
+                                                                fontSize: '14px',
+                                                                fontWeight: 600,
+                                                                background: booking.status === 'confirmed' 
+                                                                    ? 'rgba(72, 187, 120, 0.1)'
+                                                                    : booking.status === 'cancelled'
+                                                                    ? 'rgba(245, 101, 101, 0.1)'
+                                                                    : 'rgba(102, 126, 234, 0.1)',
+                                                                color: booking.status === 'confirmed'
+                                                                    ? '#48bb78'
+                                                                    : booking.status === 'cancelled'
+                                                                    ? '#f56565'
+                                                                    : '#667eea'
+                                                            }}>
+                                                                {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                                                            </div>
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '14px',
+                                                            color: '#a0aec0',
+                                                            padding: '12px',
+                                                            background: '#f7fafc',
+                                                            borderRadius: '8px',
+                                                            fontFamily: 'monospace'
+                                                        }}>
+                                                            Payment ID: {booking.paymentId}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Reviews Section */}
                                 <div className="reviews-section">
                                     <div className="reviews-header">
@@ -280,7 +694,7 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                                                         
                                                         <div className="review-content">
                                                             <p className="review-comment">
-                                                                &quot;{review.comment || 'Amazing experience! Highly recommended.'}&quot;
+                                                                &quot;{review.comment || "Amazing experience! Highly recommended."}&quot;
                                                             </p>
                                                         </div>
                                                         

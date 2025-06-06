@@ -190,6 +190,10 @@ export default function HomePage() {
         router.push('/');
     };
 
+    const handleBookings = () => {
+        router.push('/bookings');
+    };
+
     const clearFilters = () => {
         setSelectedCity("");
         setSelectedCountry("");
@@ -354,6 +358,24 @@ export default function HomePage() {
                                 }}
                             >
                                 ✨ Create
+                            </button>
+                            <button
+                                onClick={handleBookings}
+                                style={{
+                                    ...buttonStyle,
+                                    background: 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)',
+                                    color: 'white',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1.05)';
+                                    e.currentTarget.style.boxShadow = '0 8px 25px rgba(139, 92, 246, 0.4)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.2)';
+                                }}
+                            >
+                                📅 My Bookings
                             </button>
                             <button
                                 onClick={handleLogout}
@@ -617,9 +639,11 @@ export default function HomePage() {
                 filteredAndSortedListings.length > 0 ? (
                     <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', 
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                         gap: '25px', 
-                        justifyContent: 'center' 
+                        justifyContent: 'center',
+                        maxWidth: '1600px',
+                        margin: '0 auto'
                     }}>
                         {filteredAndSortedListings.map((listing, index) => (
                             <div
@@ -633,17 +657,20 @@ export default function HomePage() {
                                     cursor: 'pointer',
                                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                                     border: '1px solid #f1f5f9',
-                                    animationDelay: `${index * 0.1}s`
+                                    animationDelay: `${index * 0.1}s`,
+                                    height: '100%',
+                                    display: 'flex',
+                                    flexDirection: 'column'
                                 }}
                                 onClick={() => handleClick(listing._id)}
                             >
                                 <div style={{ position: 'relative', overflow: 'hidden', height: '220px' }}>
                                     <Image
-                                        src={`${listing.image.url}?t=${Date.now()}`}
+                                        src={listing.image.url}
                                         alt={listing.title}
                                         fill
-                                        priority={index < 6}
-                                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                        priority={index <= 5}
+                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1600px) 33vw, 25vw"
                                         style={{
                                             objectFit: 'cover',
                                             transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
