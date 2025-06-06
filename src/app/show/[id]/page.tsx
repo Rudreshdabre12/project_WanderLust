@@ -496,7 +496,7 @@ export default function ShowListing({ params }: { params: { id: string } }) {
                                                     color: '#4a5568',
                                                     fontSize: '18px',
                                                     marginBottom: '24px'
-                                                }}>You haven't booked this place yet</p>
+                                                }}>You haven&apos;t booked this place yet</p>
                                                 {!isOwner && (
                                                     <button
                                                         onClick={handleBook}
