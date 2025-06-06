@@ -53,6 +53,14 @@ export default function HomePage() {
         fetchListings();
     }, []);
 
+    // Add a new effect to refresh data when coming from edit page
+    useEffect(() => {
+        const refreshData = () => {
+            router.refresh();
+        };
+        refreshData();
+    }, [router]);
+
     useEffect(() => {
         const checkStatus = async () => {
             try {
@@ -626,7 +634,7 @@ export default function HomePage() {
                             >
                                 <div style={{ position: 'relative', overflow: 'hidden', height: '220px' }}>
                                     <Image
-                                        src={listing.image.url}
+                                        src={`${listing.image.url}?t=${Date.now()}`}
                                         alt={listing.title}
                                         fill
                                         priority={index < 6}

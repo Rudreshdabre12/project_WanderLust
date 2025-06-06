@@ -156,6 +156,7 @@ export default function EditListing({ params }: { params: { id: string } }) {
             });
             
             setSuccess("Listing updated successfully!");
+            router.refresh();
             router.push('/home');
         } catch (err: any) {
             setError("Error updating listing: " + err.message);
