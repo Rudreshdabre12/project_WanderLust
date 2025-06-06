@@ -6,12 +6,13 @@ import User from "@/models/user";
 
 connect();
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
     try {
-        // Get query parameters
-        const url = new URL(request.url);
-        const listingId = url.searchParams.get('listingId');
-        const userId = url.searchParams.get('userId');
+        // Get query parameters directly from searchParams
+        const listingId = request.nextUrl.searchParams.get('listingId');
+        const userId = request.nextUrl.searchParams.get('userId');
 
         // Build the query
         let query: any = {};
@@ -40,7 +41,9 @@ export async function GET(request: NextRequest) {
         // Verify user authentication for user-specific queries
         if (userId) {
             try {
-                const tokenResponse = await fetch('http://localhost:3000/api/users/getTokenData', {
+                // Use relative URL and handle both development and production environments
+                const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+                const tokenResponse = await fetch(`${baseUrl}/api/users/getTokenData`, {
                     method: 'POST',
                     headers: {
                         'Cookie': request.headers.get('cookie') || ''

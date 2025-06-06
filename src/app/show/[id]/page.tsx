@@ -12,6 +12,9 @@ declare global {
     }
 }
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 export default function ShowListing({ params }: { params: { id: string } }) {
     const id = params.id;
     const [listing, setListing] = useState<any>(null);
