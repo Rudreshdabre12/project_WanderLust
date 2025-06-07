@@ -1130,7 +1130,7 @@ export default function HomePage() {
                                         Processing...
                                     </>
                                 ) : (
-                                    <>🤖 Ask AI</>
+                                    <> Ask AI</>
                                 )}
                             </button>
                         </div>
