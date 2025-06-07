@@ -20,7 +20,11 @@ export async function GET(request: NextRequest) {
                 const cachedListings = await redis.get(CACHE_KEYS.ALL_LISTINGS);
                 if (cachedListings) {
                     console.log('Cache hit: Serving listings from cache');
-                    const response = NextResponse.json(JSON.parse(cachedListings));
+                    // Handle both string and object responses from Redis
+                    const parsedListings = typeof cachedListings === 'string' 
+                        ? JSON.parse(cachedListings)
+                        : cachedListings;
+                    const response = NextResponse.json(parsedListings);
                     response.headers.set('X-Cache', 'HIT');
                     return response;
                 }
@@ -37,11 +41,10 @@ export async function GET(request: NextRequest) {
         // Try to set cache if not invalidating
         if (!shouldInvalidateCache) {
             try {
-                await redis.setex(
-                    CACHE_KEYS.ALL_LISTINGS,
-                    CACHE_DURATION.LISTINGS,
-                    JSON.stringify(allListings)
-                );
+                // Convert Mongoose documents to plain objects before caching
+                const listingsToCache = allListings.map(doc => doc.toObject());
+                await redis.set(CACHE_KEYS.ALL_LISTINGS, JSON.stringify(listingsToCache));
+                await redis.expire(CACHE_KEYS.ALL_LISTINGS, CACHE_DURATION.LISTINGS);
             } catch (redisError) {
                 // Log Redis error but don't fail the request
                 console.error('Redis cache set error:', redisError);

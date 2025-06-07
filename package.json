@@ -11,12 +11,12 @@
   "dependencies": {
     "@react-google-maps/api": "^2.20.6",
     "@types/multer": "^1.4.12",
+    "@upstash/redis": "^1.28.4",
     "axios": "^1.6.7",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.0.1",
     "dotenv": "^16.4.5",
     "framer-motion": "^12.16.0",
-    "ioredis": "^5.6.1",
     "joi": "^17.13.3",
     "js-cookie": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
@@ -31,8 +31,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
-    "react-spinners": "^0.13.8",
-    "redis": "^5.1.1"
+    "react-spinners": "^0.13.8"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

@@ -14,7 +14,11 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         
         if (cachedListing) {
             console.log('Serving listing from cache');
-            return NextResponse.json(JSON.parse(cachedListing));
+            // Handle both string and object responses from Redis
+            const parsedListing = typeof cachedListing === 'string'
+                ? JSON.parse(cachedListing)
+                : cachedListing;
+            return NextResponse.json(parsedListing);
         }
 
         // If not in cache, get from database
@@ -26,11 +30,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         }
 
         // Store in cache
-        await redis.setex(
-            CACHE_KEYS.LISTING(listingId),
-            CACHE_DURATION.SINGLE_LISTING,
-            JSON.stringify(listing)
-        );
+        // Convert Mongoose document to plain object before caching
+        const listingToCache = listing.toObject();
+        await redis.set(CACHE_KEYS.LISTING(listingId), JSON.stringify(listingToCache));
+        await redis.expire(CACHE_KEYS.LISTING(listingId), CACHE_DURATION.SINGLE_LISTING);
 
         return NextResponse.json(listing);
     } catch (error: any) {
