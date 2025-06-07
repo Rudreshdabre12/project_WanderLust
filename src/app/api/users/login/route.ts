@@ -3,40 +3,64 @@ import User from "@/models/user";
 import { NextRequest, NextResponse } from "next/server";
 import bcryptjs from "bcryptjs"
 import jwt from "jsonwebtoken"
-import {giveTokenData} from "@/utills/getData"
-connect();
+import { giveTokenData } from "@/utills/getData"
 
-export async  function POST(request:NextRequest){
-    try{
-       const reqBody=await request.json();
-       console.log(giveTokenData());
-       const {username,password}=reqBody;
-       console.log(reqBody);
-       const user=await User.findOne({username});
-       if(!user){
-        return NextResponse.json({error:"user does not exist"},{status:400});
-       }
-       const validPassword=await bcryptjs.compare(password,user.password);
-       if(!validPassword){
-          return NextResponse.json({error:"Invalid Password"},{status:400});
-       }
-       //create token data
-       const tokenData={
-         id:user._id,
-         username:user.username,
-         email:user.email,
-       }
-       //create token
-       const token=await jwt.sign(tokenData,process.env.TOKEN_SECRET!,{expiresIn:"1d"})
-       const response=NextResponse.json({
-        message:"login successfully",
-        success:true,
-       })
-       response.cookies.set("token",token,{
-        httpOnly:true,
-       })
-       return response;
-    }catch(error:any){
-        return NextResponse.json({error:error.message},{status:500});
+let isConnected = false;
+
+export async function POST(request: NextRequest) {
+    try {
+        // Connect to MongoDB if not already connected
+        if (!isConnected) {
+            await connect();
+            isConnected = true;
+        }
+
+        const reqBody = await request.json();
+        const { username, password } = reqBody;
+
+        // Find user
+        const user = await User.findOne({ username });
+        if (!user) {
+            return NextResponse.json({ error: "User does not exist" }, { status: 400 });
+        }
+
+        // Verify password
+        const validPassword = await bcryptjs.compare(password, user.password);
+        if (!validPassword) {
+            return NextResponse.json({ error: "Invalid password" }, { status: 400 });
+        }
+
+        // Create token data
+        const tokenData = {
+            id: user._id,
+            username: user.username,
+            email: user.email
+        };
+
+        // Create token
+        const token = await jwt.sign(tokenData, process.env.TOKEN_SECRET!, { expiresIn: "1d" });
+
+        // Create response
+        const response = NextResponse.json({
+            message: "Login successful",
+            success: true
+        });
+
+        // Set cookie with secure options
+        response.cookies.set("token", token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+            maxAge: 24 * 60 * 60 // 1 day in seconds
+        });
+
+        return response;
+    } catch (error: any) {
+        console.error("Login error:", error);
+        return NextResponse.json(
+            { error: "Authentication failed" },
+            { status: 500 }
+        );
     }
 }
