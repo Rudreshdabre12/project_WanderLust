@@ -9,12 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@react-google-maps/api": "^2.20.6",
     "@types/multer": "^1.4.12",
     "axios": "^1.6.7",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.0.1",
     "dotenv": "^16.4.5",
-    "framer-motion": "^12.15.0",
+    "framer-motion": "^12.16.0",
     "ioredis": "^5.6.1",
     "joi": "^17.13.3",
     "js-cookie": "^3.0.5",

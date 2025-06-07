@@ -3,6 +3,8 @@ import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { motion } from "framer-motion";
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 
 type ListingFormData = {
     title: string;
@@ -180,14 +182,29 @@ export default function EditListing({ params }: { params: { id: string } }) {
         }
     };
 
+    const handleLocationSelect = ({ city, country }: { city: string; country: string }) => {
+        if (formData) {  // Check if formData exists
+            setFormData({
+                ...formData,  // Spread all existing properties
+                location: city,
+                country: country
+            });
+        }
+    };
+
     return (
-        <div style={{
-            minHeight: '100vh',
-            background: 'linear-gradient(120deg, #1a1c2e, #4b1248)',
-            padding: '40px 20px',
-            boxSizing: 'border-box',
-            color: '#fff'
-        }}>
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            style={{
+                minHeight: '100vh',
+                background: 'linear-gradient(120deg, #1a1c2e, #4b1248)',
+                padding: '40px 20px',
+                boxSizing: 'border-box',
+                color: '#fff'
+            }}
+        >
             <div style={{
                 maxWidth: '1200px',
                 margin: '0 auto',
@@ -367,8 +384,6 @@ export default function EditListing({ params }: { params: { id: string } }) {
                                     { name: 'title', label: 'Title', type: 'text' },
                                     { name: 'description', label: 'Description', type: 'textarea' },
                                     { name: 'price', label: 'Price', type: 'number' },
-                                    { name: 'location', label: 'Location', type: 'text' },
-                                    { name: 'country', label: 'Country', type: 'text' }
                                 ].map((field) => (
                                     <div 
                                         key={field.name} 
@@ -435,6 +450,26 @@ export default function EditListing({ params }: { params: { id: string } }) {
                                         )}
                                     </div>
                                 ))}
+
+                                <div style={{ marginBottom: '24px' }}>
+                                    <label
+                                        htmlFor="location"
+                                        style={{
+                                            display: 'block',
+                                            marginBottom: '8px',
+                                            color: '#1f2937',
+                                            fontSize: '16px',
+                                            fontWeight: '500'
+                                        }}
+                                    >
+                                        Location
+                                    </label>
+                                    <LocationAutocomplete
+                                        onLocationSelect={handleLocationSelect}
+                                        placeholder="Enter city and country"
+                                        initialValue={formData.location ? `${formData.location}${formData.country ? `, ${formData.country}` : ''}` : ''}
+                                    />
+                                </div>
                             </div>
                         </div>
 
@@ -530,6 +565,6 @@ export default function EditListing({ params }: { params: { id: string } }) {
                     to { opacity: 1; transform: translateX(0); }
                 }
             `}</style>
-        </div>
+        </motion.div>
     );
 }

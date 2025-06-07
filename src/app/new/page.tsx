@@ -5,6 +5,7 @@ import Link from "next/link";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from 'next/image';
+import LocationAutocomplete from "@/components/LocationAutocomplete";
 
 interface FormData {
     title: string;
@@ -224,6 +225,14 @@ export default function AddListingForm() {
         if (fileInputRef.current) {
             fileInputRef.current.value = "";
         }
+    };
+
+    const handleLocationSelect = ({ city, country }: { city: string; country: string }) => {
+        setFormData(prevData => ({
+            ...prevData,
+            location: city,
+            country: country
+        }));
     };
 
     return (
@@ -622,6 +631,27 @@ export default function AddListingForm() {
                                 </motion.div>
                             )}
                         </motion.div>
+
+                        {/* Replace the location and country inputs with LocationAutocomplete */}
+                        <div style={{ marginBottom: '24px' }}>
+                            <label
+                                htmlFor="location"
+                                style={{
+                                    display: 'block',
+                                    marginBottom: '8px',
+                                    color: '#1f2937',
+                                    fontSize: '16px',
+                                    fontWeight: '500'
+                                }}
+                            >
+                                Location
+                            </label>
+                            <LocationAutocomplete
+                                onLocationSelect={handleLocationSelect}
+                                placeholder="Enter city and country"
+                                initialValue={formData.location ? `${formData.location}${formData.country ? `, ${formData.country}` : ''}` : ''}
+                            />
+                        </div>
 
                         {/* Submit Button */}
                         <motion.button
