@@ -1,69 +1,77 @@
 import mongoose from "mongoose";
 
+declare global {
+    var mongoose: any;
+}
+
 const MONGODB_URL = process.env.MONGODB_URL || process.env.MONGO_URL;
 
+if (!MONGODB_URL) {
+    throw new Error(
+        "Please define the MONGODB_URL environment variable inside .env.local"
+    );
+}
+
+let cached = global.mongoose;
+
+if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null };
+}
+
 export async function connect() {
-    try {
-        if (!MONGODB_URL) {
-            throw new Error("MongoDB connection URL is not defined in environment variables");
-        }
+    if (cached.conn) {
+        console.log("Using cached MongoDB connection");
+        return cached.conn;
+    }
 
-        // Check if we're already connected
-        if (mongoose.connection.readyState === 1) {
-            console.log("Already connected to MongoDB");
-            return;
-        }
-
-        const options = {
+    if (!cached.promise) {
+        const opts = {
+            bufferCommands: false,
             useNewUrlParser: true,
             useUnifiedTopology: true,
-            bufferCommands: false,
             serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of 30s
             socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
         };
 
-        await mongoose.connect(MONGODB_URL, options);
-        
-        const connection = mongoose.connection;
-        
-        connection.on("connected", () => {
+        // We can safely assert MONGODB_URL is string here since we check it above
+        const mongoUrl = MONGODB_URL as string;
+        cached.promise = mongoose.connect(mongoUrl, opts).then((mongoose) => {
             console.log("MongoDB connected successfully");
+            return mongoose;
         });
-
-        connection.on("error", (error) => {
-            console.error("MongoDB connection error:", error);
-            // Attempt to reconnect
-            setTimeout(() => {
-                connect();
-            }, 5000);
-        });
-
-        connection.on("disconnected", () => {
-            console.log("MongoDB disconnected");
-            // Attempt to reconnect
-            setTimeout(() => {
-                connect();
-            }, 5000);
-        });
-
-        // Handle process termination
-        process.on("SIGINT", async () => {
-            try {
-                await mongoose.connection.close();
-                console.log("MongoDB connection closed through app termination");
-                process.exit(0);
-            } catch (err) {
-                console.error("Error closing MongoDB connection:", err);
-                process.exit(1);
-            }
-        });
-
-    } catch (error: any) {
-        console.error("Error connecting to MongoDB:", error.message);
-        // Attempt to reconnect
-        setTimeout(() => {
-            connect();
-        }, 5000);
-        throw error;
     }
-} 
+
+    try {
+        cached.conn = await cached.promise;
+        return cached.conn;
+    } catch (error: any) {
+        cached.promise = null;
+        console.error("MongoDB connection error:", error);
+        throw new Error(`MongoDB connection failed: ${error.message}`);
+    }
+}
+
+// Handle connection events
+mongoose.connection.on("connected", () => {
+    console.log("MongoDB connected successfully");
+});
+
+mongoose.connection.on("error", (error) => {
+    console.error("MongoDB connection error:", error);
+});
+
+mongoose.connection.on("disconnected", () => {
+    console.log("MongoDB disconnected");
+});
+
+// Handle process termination
+process.on("SIGINT", async () => {
+    try {
+        await mongoose.connection.close();
+        console.log("MongoDB connection closed through app termination");
+        process.exit(0);
+    } catch (err) {
+        console.error("Error closing MongoDB connection:", err);
+        process.exit(1);
+    }
+}); 

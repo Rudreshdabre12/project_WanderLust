@@ -14,14 +14,25 @@ export async function GET(request: NextRequest) {
     try {
         // Connect to MongoDB if not already connected
         if (!isConnected) {
+            console.log('Attempting to connect to MongoDB...');
             await connect();
             isConnected = true;
+            console.log('MongoDB connection successful');
         }
 
         let shouldInvalidateCache = request.nextUrl.searchParams.get('invalidate') === 'true';
-        const redis = getRedisClient();
+        console.log(`Cache invalidation requested: ${shouldInvalidateCache}`);
+
+        let redis;
+        try {
+            redis = getRedisClient();
+            console.log('Redis client initialized successfully');
+        } catch (redisError) {
+            console.error('Failed to initialize Redis client:', redisError);
+            // Continue without cache if Redis fails
+        }
         
-        if (!shouldInvalidateCache) {
+        if (redis && !shouldInvalidateCache) {
             try {
                 // Try to get data from cache
                 const cachedListings = await redis.get(CACHE_KEYS.ALL_LISTINGS);
@@ -37,21 +48,23 @@ export async function GET(request: NextRequest) {
                 }
             } catch (redisError) {
                 // Log Redis error but continue to fetch from database
-                console.error('Redis error:', redisError);
+                console.error('Redis cache retrieval error:', redisError);
             }
         }
 
         // Fetch from database if cache miss, invalidation requested, or Redis error
         console.log('Cache miss or invalidation: Fetching from database');
         const allListings = await listings.find({}).sort({ createdAt: -1 });
+        console.log(`Found ${allListings.length} listings in database`);
 
-        // Try to set cache if not invalidating
-        if (!shouldInvalidateCache) {
+        // Try to set cache if Redis is available and not invalidating
+        if (redis && !shouldInvalidateCache) {
             try {
                 // Convert Mongoose documents to plain objects before caching
                 const listingsToCache = allListings.map(doc => doc.toObject());
                 await redis.set(CACHE_KEYS.ALL_LISTINGS, JSON.stringify(listingsToCache));
                 await redis.expire(CACHE_KEYS.ALL_LISTINGS, CACHE_DURATION.LISTINGS);
+                console.log('Successfully cached listings');
             } catch (redisError) {
                 // Log Redis error but don't fail the request
                 console.error('Redis cache set error:', redisError);
@@ -64,12 +77,24 @@ export async function GET(request: NextRequest) {
 
     } catch (error: any) {
         console.error('Server error:', error);
+        console.error('Error stack:', error.stack);
+        
+        // Check for specific error types
+        if (error instanceof mongoose.Error.MongooseServerSelectionError) {
+            return NextResponse.json(
+                { 
+                    message: 'Database connection failed',
+                    error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+                },
+                { status: 500 }
+            );
+        }
         
         // Return a proper error response
         return NextResponse.json(
             { 
                 message: 'Error fetching listings',
-                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+                error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
             },
             { status: 500 }
         );
