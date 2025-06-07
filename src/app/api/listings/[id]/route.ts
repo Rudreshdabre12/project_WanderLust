@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connect } from "@/dbConfig/dbConfig";
 import listings from "@/models/listings";
-import { redis, CACHE_KEYS, CACHE_DURATION } from "@/lib/redis";
+import { getRedisClient, CACHE_KEYS, CACHE_DURATION } from "@/lib/redis";
 
 let isConnected = false;
 
@@ -14,6 +14,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         }
 
         const listingId = params.id;
+        const redis = getRedisClient();
 
         // Try to get data from cache first
         const cachedListing = await redis.get(CACHE_KEYS.LISTING(listingId));
@@ -44,7 +45,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json(listing);
     } catch (error: any) {
         console.error("Error fetching listing:", error);
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        return NextResponse.json({ 
+            message: "Failed to fetch listing",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        }, { status: 500 });
     }
 }
 
@@ -66,6 +70,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         }
 
         // Invalidate both single listing and all listings cache
+        const redis = getRedisClient();
         await Promise.all([
             redis.del(CACHE_KEYS.LISTING(listingId)),
             redis.del(CACHE_KEYS.ALL_LISTINGS)
@@ -74,7 +79,10 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         return NextResponse.json(updatedListing);
     } catch (error: any) {
         console.error("Error updating listing:", error);
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        return NextResponse.json({ 
+            message: "Failed to update listing",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        }, { status: 500 });
     }
 }
 
@@ -95,6 +103,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         }
 
         // Invalidate both single listing and all listings cache
+        const redis = getRedisClient();
         await Promise.all([
             redis.del(CACHE_KEYS.LISTING(listingId)),
             redis.del(CACHE_KEYS.ALL_LISTINGS)
@@ -103,6 +112,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
         return NextResponse.json({ message: "Listing deleted successfully" });
     } catch (error: any) {
         console.error("Error deleting listing:", error);
-        return NextResponse.json({ message: error.message }, { status: 500 });
+        return NextResponse.json({ 
+            message: "Failed to delete listing",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        }, { status: 500 });
     }
 } 

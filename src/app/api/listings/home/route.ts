@@ -3,7 +3,7 @@ import Link from "next/link";
 import listings from "@/models/listings"
 import { NextRequest, NextResponse } from "next/server";
 import {connect} from "@/dbConfig/dbConfig";
-import { redis, CACHE_KEYS, CACHE_DURATION } from "@/lib/redis";
+import { getRedisClient, CACHE_KEYS, CACHE_DURATION } from "@/lib/redis";
 
 let isConnected = false;
 
@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
         }
 
         let shouldInvalidateCache = request.nextUrl.searchParams.get('invalidate') === 'true';
+        const redis = getRedisClient();
         
         if (!shouldInvalidateCache) {
             try {
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
             { 
                 message: 'Error fetching listings',
-                error: error.message || 'Unknown error occurred'
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
             },
             { status: 500 }
         );

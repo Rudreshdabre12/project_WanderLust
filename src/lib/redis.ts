@@ -4,14 +4,21 @@ declare global {
     var redis: Redis | undefined;
 }
 
-const redis = global.redis || new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL || 'https://enjoyed-katydid-21041.upstash.io',
-    token: process.env.UPSTASH_REDIS_REST_TOKEN || 'AVIxAAIjcDFmNzhhZDFkZGE3OGQ0YTdjODE3MjI0YWQwNWQ4ODc3YXAxMA',
-});
+// Initialize Redis only if URL and token are available
+const getRedisClient = () => {
+    if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+        throw new Error('Redis credentials not configured');
+    }
 
-if (process.env.NODE_ENV !== 'production') {
-    global.redis = redis;
-}
+    if (!global.redis) {
+        global.redis = new Redis({
+            url: process.env.UPSTASH_REDIS_REST_URL,
+            token: process.env.UPSTASH_REDIS_REST_TOKEN,
+        });
+    }
+
+    return global.redis;
+};
 
 // Cache duration in seconds
 export const CACHE_DURATION = {
@@ -27,4 +34,4 @@ export const CACHE_KEYS = {
     LISTING: (id: string) => `${ENV_PREFIX}:listing:${id}`,
 } as const;
 
-export { redis }; 
+export { getRedisClient }; 
