@@ -3,10 +3,16 @@ import { connect } from "@/dbConfig/dbConfig";
 import listings from "@/models/listings";
 import { redis, CACHE_KEYS, CACHE_DURATION } from "@/lib/redis";
 
-connect();
+let isConnected = false;
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
     try {
+        // Connect to MongoDB if not already connected
+        if (!isConnected) {
+            await connect();
+            isConnected = true;
+        }
+
         const listingId = params.id;
 
         // Try to get data from cache first
@@ -37,6 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
         return NextResponse.json(listing);
     } catch (error: any) {
+        console.error("Error fetching listing:", error);
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
 }
@@ -44,9 +51,19 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 // Update route - invalidate cache when listing is updated
 export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
     try {
+        // Connect to MongoDB if not already connected
+        if (!isConnected) {
+            await connect();
+            isConnected = true;
+        }
+
         const listingId = params.id;
         const reqBody = await request.json();
         const updatedListing = await listings.findByIdAndUpdate(listingId, reqBody, { new: true });
+
+        if (!updatedListing) {
+            return NextResponse.json({ message: "Listing not found" }, { status: 404 });
+        }
 
         // Invalidate both single listing and all listings cache
         await Promise.all([
@@ -56,6 +73,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
         return NextResponse.json(updatedListing);
     } catch (error: any) {
+        console.error("Error updating listing:", error);
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
 }
@@ -63,8 +81,18 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 // Delete route - invalidate cache when listing is deleted
 export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
     try {
+        // Connect to MongoDB if not already connected
+        if (!isConnected) {
+            await connect();
+            isConnected = true;
+        }
+
         const listingId = params.id;
-        await listings.findByIdAndDelete(listingId);
+        const deletedListing = await listings.findByIdAndDelete(listingId);
+
+        if (!deletedListing) {
+            return NextResponse.json({ message: "Listing not found" }, { status: 404 });
+        }
 
         // Invalidate both single listing and all listings cache
         await Promise.all([
@@ -74,6 +102,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
         return NextResponse.json({ message: "Listing deleted successfully" });
     } catch (error: any) {
+        console.error("Error deleting listing:", error);
         return NextResponse.json({ message: error.message }, { status: 500 });
     }
 } 

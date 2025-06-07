@@ -5,13 +5,19 @@ import { NextRequest, NextResponse } from "next/server";
 import {connect} from "@/dbConfig/dbConfig";
 import { redis, CACHE_KEYS, CACHE_DURATION } from "@/lib/redis";
 
-connect();
+let isConnected = false;
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
     try {
+        // Connect to MongoDB if not already connected
+        if (!isConnected) {
+            await connect();
+            isConnected = true;
+        }
+
         let shouldInvalidateCache = request.nextUrl.searchParams.get('invalidate') === 'true';
         
         if (!shouldInvalidateCache) {
