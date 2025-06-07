@@ -1003,7 +1003,7 @@ export default function HomePage() {
                             Ask AI Travel Assistant
                         </h3>
                         <p style={{ margin: '0 0 20px 0', color: '#6b7280', fontSize: '14px' }}>
-                            Tell me about your travel preferences (e.g., "I want a beach vacation with adventure activities under $2000" or "Looking for a peaceful mountain retreat")
+                            Tell me about your travel preferences (e.g., &quot;I want a beach vacation with adventure activities under $2000&quot; or &quot;Looking for a peaceful mountain retreat&quot;)
                         </p>
                         
                         {/* AI Response Section */}
