@@ -13,15 +13,12 @@ export async function POST(request: NextRequest) {
             await connect();
             isConnected = true;
         }
-
         // Verify TOKEN_SECRET exists
         if (!process.env.TOKEN_SECRET) {
             throw new Error("TOKEN_SECRET is not defined");
         }
-
         const reqBody = await request.json();
         const { username, password } = reqBody;
-
         // Validate required fields
         if (!username || !password) {
             return NextResponse.json(
@@ -29,7 +26,6 @@ export async function POST(request: NextRequest) {
                 { status: 400 }
             );
         }
-
         // Find user (case insensitive)
         const user = await User.findOne({ 
             username: username.toLowerCase()

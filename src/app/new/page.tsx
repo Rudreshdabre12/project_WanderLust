@@ -119,7 +119,8 @@ export default function AddListingForm() {
             formData.append('signature', signature);
             formData.append('timestamp', timestamp.toString());
             formData.append('api_key', apiKey);
-            formData.append('folder', 'listings'); // Optional: organize in folders
+            formData.append('folder', 'listings');
+            formData.append('resource_type', 'auto');
 
             // Upload directly to Cloudinary
             const uploadResponse = await axios.post(
@@ -145,7 +146,11 @@ export default function AddListingForm() {
 
         } catch (err: any) {
             console.error('Cloudinary upload error:', err);
-            setError(err.response?.data?.error?.message || 'Upload failed');
+            if (err.response?.data?.error) {
+                setError(err.response.data.error.message || 'Upload failed');
+            } else {
+                setError('Upload failed. Please try again.');
+            }
             return null;
         } finally {
             setIsUploading(false);

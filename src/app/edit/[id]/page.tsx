@@ -103,6 +103,7 @@ export default function EditListing({ params }: { params: { id: string } }) {
             formData.append('timestamp', timestamp.toString());
             formData.append('api_key', apiKey);
             formData.append('folder', 'listings');
+            formData.append('resource_type', 'auto');
 
             const uploadResponse = await axios.post(
                 `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
@@ -121,7 +122,11 @@ export default function EditListing({ params }: { params: { id: string } }) {
             return uploadResponse.data.secure_url;
         } catch (err: any) {
             console.error('Cloudinary upload error:', err);
-            setError(err.response?.data?.error?.message || 'Upload failed');
+            if (err.response?.data?.error) {
+                setError(err.response.data.error.message || 'Upload failed');
+            } else {
+                setError('Upload failed. Please try again.');
+            }
             return null;
         } finally {
             setIsUploading(false);
